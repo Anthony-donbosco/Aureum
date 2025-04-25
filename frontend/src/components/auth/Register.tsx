@@ -1,6 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  TouchableOpacity, 
+  ScrollView, 
+  TextInput,
+  Platform 
+} from 'react-native';
 import { useNavigation, NavigationProp, ParamListBase } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import SecureInput from '../common/SecureInput';
 import { useAuth } from '../../context/AuthContext';
 import Loader from '../common/Loader';
@@ -21,6 +30,7 @@ const Register: React.FC = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [registerType, setRegisterType] = useState<'personal' | 'business'>('personal');
+  
   const navigation = useNavigation<NavigationProp<ParamListBase>>();
   const { register } = useAuth();
 
@@ -31,8 +41,7 @@ const Register: React.FC = () => {
            birthdate.trim() !== '' &&
            !name.match(/[<>$\/=]/) && 
            !email.match(/[<>$\/=]/) && 
-           !password.match(/[<>$\/=]/) &&
-           !birthdate.match(/[<>$\/=]/);
+           !password.match(/[<>$\/=]/);
   };
 
   const handleRegister = async () => {
@@ -56,6 +65,26 @@ const Register: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Formato guiado para la fecha de nacimiento
+  const handleBirthdateInput = (text) => {
+    // Permitir solo números y barras
+    const filtered = text.replace(/[^0-9/]/g, '');
+    
+    // Agregar barras automáticamente
+    let formatted = filtered;
+    
+    // Si se han ingresado 2 dígitos, agregar una barra
+    if (filtered.length === 2 && !filtered.includes('/') && filtered.length > birthdate.length) {
+      formatted = filtered + '/';
+    }
+    // Si se han ingresado 5 caracteres (DD/MM) agregar otra barra
+    else if (filtered.length === 5 && filtered.split('/').length === 2 && filtered.length > birthdate.length) {
+      formatted = filtered + '/';
+    }
+    
+    setBirthdate(formatted);
   };
 
   if (isLoading) {
@@ -109,11 +138,18 @@ const Register: React.FC = () => {
         autoCapitalize="words"
       />
       
-      <SecureInput
-        placeholder="Ingrese su nacimiento"
-        value={birthdate}
-        onChangeText={setBirthdate}
-      />
+      {/* Campo de fecha con formato guiado */}
+      <View style={styles.datePickerContainer}>
+        <Ionicons name="calendar-outline" size={24} color="#666" style={styles.dateIcon} />
+        <TextInput
+          style={[styles.dateInput, birthdate ? styles.dateText : styles.datePlaceholder]}
+          placeholder="DD/MM/AAAA"
+          value={birthdate}
+          onChangeText={handleBirthdateInput}
+          keyboardType="numeric"
+          maxLength={10}
+        />
+      </View>
       
       <SecureInput
         placeholder="Ingrese su correo"
@@ -123,7 +159,7 @@ const Register: React.FC = () => {
       />
       
       <SecureInput
-        placeholder="Ingrese un contraseño seguro"
+        placeholder="Ingrese una contraseña segura"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
@@ -181,6 +217,30 @@ const styles = StyleSheet.create({
   selectedTypeButtonText: {
     color: 'black',
     fontWeight: 'bold',
+  },
+  datePickerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F2F2F2',
+    borderRadius: 20,
+    padding: 12,
+    width: '100%',
+    marginVertical: 8,
+  },
+  dateIcon: {
+    marginRight: 10,
+  },
+  dateInput: {
+    flex: 1,
+    fontSize: 16,
+  },
+  dateText: {
+    color: '#000',
+    fontSize: 16,
+  },
+  datePlaceholder: {
+    color: '#999',
+    fontSize: 16,
   },
   button: {
     backgroundColor: '#F9BE00',

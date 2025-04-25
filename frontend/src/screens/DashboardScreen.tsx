@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
-import { useTransactions } from '../context/TransactionContext'; // Cambiado a useTransactions
+import { useTransactions } from '../context/TransactionContext';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import Loader from '../components/common/Loader';
 import { formatCurrency } from '../utils/formatUtils';
@@ -25,8 +25,8 @@ const DashboardScreen: React.FC = () => {
   const { 
     balance, 
     recentTransactions, 
-    refreshData // Cambiado a refreshData en lugar de fetchBalance y fetchRecentTransactions
-  } = useTransactions(); // Cambiado a useTransactions
+    refreshData
+  } = useTransactions();
   
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -38,7 +38,7 @@ const DashboardScreen: React.FC = () => {
   const loadDashboardData = async () => {
     setIsLoading(true);
     try {
-      await refreshData(); // Usando refreshData en lugar de Promise.all con varias funciones
+      await refreshData();
     } catch (error) {
       console.error('Error loading dashboard data:', error);
     } finally {
@@ -60,6 +60,16 @@ const DashboardScreen: React.FC = () => {
   if (isLoading) {
     return <Loader />;
   }
+
+  // Función para obtener el nombre de usuario de forma segura
+  const getUserName = () => {
+    // Verificar si user y user.name existen antes de intentar split
+    if (user && typeof user.name === 'string') {
+      const nameParts = user.name.split(' ');
+      return nameParts[0] || 'Usuario';
+    }
+    return 'Usuario';
+  };
 
   const getTransactionIcon = (category: string) => {
     switch (category.toLowerCase()) {
@@ -91,7 +101,7 @@ const DashboardScreen: React.FC = () => {
     >
       <View style={styles.header}>
         <View style={styles.userInfo}>
-          <Text style={styles.greeting}>Hola, {user?.name?.split(' ')[0] || 'Usuario'}</Text>
+          <Text style={styles.greeting}>Hola, {getUserName()}</Text>
           <View style={styles.iconContainer}>
             <TouchableOpacity>
               <Ionicons name="moon-outline" size={24} color="#000" />
@@ -141,7 +151,7 @@ const DashboardScreen: React.FC = () => {
 
       <View style={styles.transactionsSection}>
         <Text style={styles.sectionTitle}>Historial de ingresos y egresos</Text>
-        {recentTransactions.length > 0 ? (
+        {recentTransactions && recentTransactions.length > 0 ? (
           recentTransactions.map((transaction, index) => (
             <View key={index} style={styles.transactionItem}>
               <View style={styles.transactionLeftContent}>
@@ -335,5 +345,4 @@ const styles = StyleSheet.create({
   },
 });
 
-// Exportación predeterminada
 export default DashboardScreen;
