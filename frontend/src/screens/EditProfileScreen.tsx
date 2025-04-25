@@ -11,15 +11,26 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import SecureInput from '../components/common/SecureInput';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, AuthContextType } from '../context/AuthContext';
 import Loader from '../components/common/Loader';
 
+// Definir tipo para navegación
+type NavigationProp = {
+  goBack: () => void;
+};
+
+// Definir tipo para la actualización del perfil
+interface ProfileUpdate {
+  name: string;
+  email: string;
+}
+
 const EditProfileScreen: React.FC = () => {
-  const { user, updateProfile } = useAuth();
-  const [name, setName] = useState(user?.name || '');
-  const [email, setEmail] = useState(user?.email || '');
+  const auth = useAuth() as AuthContextType;
+  const [name, setName] = useState(auth.user?.name || '');
+  const [email, setEmail] = useState(auth.user?.email || '');
   const [isLoading, setIsLoading] = useState(false);
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
 
   const isFormValid = () => {
     return name.trim() !== '' && 
@@ -29,21 +40,32 @@ const EditProfileScreen: React.FC = () => {
   };
 
   const handleUpdateProfile = async () => {
-    if (!isFormValid()) return;
+    if (!isFormValid()) {
+      if (name.trim() === '' || email.trim() === '') {
+        Alert.alert('Error', 'Todos los campos son requeridos');
+      } else if (name.match(/[<>$\/=]/) || email.match(/[<>$\/=]/)) {
+        Alert.alert('Error', 'Los campos contienen caracteres no permitidos');
+      }
+      return;
+    }
     
     setIsLoading(true);
     try {
-      await updateProfile({ name, email });
-      Alert.alert(
-        'Éxito',
-        'Perfil actualizado correctamente',
-        [
-          { 
-            text: 'OK', 
-            onPress: () => navigation.goBack() 
-          }
-        ]
-      );
+      const profileData: ProfileUpdate = { name, email };
+      
+      // Siempre asumimos que el método existe después del casting
+      if (auth.updateProfile) {
+        await auth.updateProfile(profileData);
+        Alert.alert(
+          'Éxito',
+          'Perfil actualizado correctamente',
+          [{ text: 'OK', onPress: () => navigation.goBack() }]
+        );
+      } else {
+        // Implementación alternativa o mensaje de error
+        console.error('La función updateProfile no está implementada en el contexto de autenticación');
+        Alert.alert('Error', 'Esta funcionalidad no está disponible actualmente');
+      }
     } catch (error) {
       console.error('Update profile error:', error);
       Alert.alert('Error', 'No se pudo actualizar el perfil');

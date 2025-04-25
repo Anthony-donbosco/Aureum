@@ -7,17 +7,22 @@ import {
   TouchableOpacity,
   RefreshControl
 } from 'react-native';
-import { useTransaction } from '../../context/TransactionContext';
+import { useTransactions } from '../../context/TransactionContext'; // Cambiado a useTransactions (plural)
 import { useNavigation } from '@react-navigation/native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { formatCurrency } from '../../utils/formatUtils';
 import Loader from '../common/Loader';
 
+// Definir el tipo para la navegación
+type NavigationProp = {
+  navigate: (screen: string, params?: any) => void;
+};
+
 const Expense: React.FC = () => {
-  const { expenseTransactions, fetchExpenseTransactions } = useTransaction();
+  const { expenseTransactions, refreshData } = useTransactions(); // Cambiado a refreshData en lugar de fetchExpenseTransactions
   const [refreshing, setRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
 
   useEffect(() => {
     loadExpenseData();
@@ -26,7 +31,7 @@ const Expense: React.FC = () => {
   const loadExpenseData = async () => {
     setIsLoading(true);
     try {
-      await fetchExpenseTransactions();
+      await refreshData(); // Usando refreshData en lugar de fetchExpenseTransactions
     } catch (error) {
       console.error('Error loading expense data:', error);
     } finally {
@@ -69,7 +74,7 @@ const Expense: React.FC = () => {
     <View style={styles.container}>
       <FlatList
         data={expenseTransactions}
-        keyExtractor={(item, index) => index.toString()}
+        keyExtractor={(item, index) => item.id || index.toString()}
         renderItem={({ item }) => (
           <View style={styles.transactionItem}>
             <View style={styles.transactionLeftContent}>

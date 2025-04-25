@@ -8,7 +8,7 @@ import {
   ActivityIndicator
 } from 'react-native';
 import { Calendar, DateData } from 'react-native-calendars';
-import { useTransaction } from '../context/TransactionContext';
+import { useTransactions } from '../context/TransactionContext'; // Cambiado a useTransactions
 import { format } from 'date-fns';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { formatCurrency } from '../utils/formatUtils';
@@ -24,15 +24,27 @@ interface MarkedDates {
   };
 }
 
+// Definir la interfaz Transaction
+interface Transaction {
+  id?: string;
+  type: 'income' | 'expense';
+  category: string;
+  detail?: string;
+  amount: number;
+  date: string;
+  dateObj?: Date;
+}
+
 const CalendarScreen: React.FC = () => {
-  const { transactions, fetchTransactionsByMonth } = useTransaction();
+  const { getTransactionsByMonth, refreshData } = useTransactions(); // Cambiado a useTransactions
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [markedDates, setMarkedDates] = useState<MarkedDates>({});
   const [monthExpenses, setMonthExpenses] = useState(0);
   const [expensesByCategory, setExpensesByCategory] = useState<{ [key: string]: number }>({});
-  const [dayTransactions, setDayTransactions] = useState([]);
+  const [dayTransactions, setDayTransactions] = useState<Transaction[]>([]);
   const [selectedDay, setSelectedDay] = useState('');
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   useEffect(() => {
     loadTransactionData();
@@ -43,10 +55,13 @@ const CalendarScreen: React.FC = () => {
     try {
       const month = selectedDate.getMonth() + 1;
       const year = selectedDate.getFullYear();
-      await fetchTransactionsByMonth(month, year);
+      
+      // Usar getTransactionsByMonth y guardarlo en el estado local
+      const monthlyTransactions = await getTransactionsByMonth(month, year);
+      setTransactions(monthlyTransactions);
       
       // Process transactions data
-      processTransactions();
+      processTransactions(monthlyTransactions);
     } catch (error) {
       console.error('Error loading calendar data:', error);
     } finally {
@@ -54,15 +69,18 @@ const CalendarScreen: React.FC = () => {
     }
   };
 
-  const processTransactions = () => {
+  const processTransactions = (transactionData: Transaction[]) => {
     // Mark dates with transactions
     const marked: MarkedDates = {};
     let totalExpenses = 0;
     const expenseCategories: { [key: string]: number } = {};
     
-    transactions.forEach(transaction => {
-      const dateObj = new Date(transaction.dateObj);
-      const dateStr = dateObj.toISOString().split('T')[0];
+    transactionData.forEach(transaction => {
+      // Asegurar que dateObj existe, o crear una a partir de date si es string
+      const dateObj = transaction.dateObj || new Date(transaction.date);
+      const dateStr = dateObj instanceof Date 
+        ? dateObj.toISOString().split('T')[0] 
+        : new Date().toISOString().split('T')[0];
       
       // Mark transaction dates
       if (!marked[dateStr]) {
@@ -91,7 +109,7 @@ const CalendarScreen: React.FC = () => {
       setSelectedDay(today);
       
       // Filter transactions for the selected day
-      filterDayTransactions(today);
+      filterDayTransactions(today, transactionData);
     }
     
     setMarkedDates(marked);
@@ -99,10 +117,12 @@ const CalendarScreen: React.FC = () => {
     setExpensesByCategory(expenseCategories);
   };
 
-  const filterDayTransactions = (dateStr: string) => {
-    const dayTxs = transactions.filter(tx => {
-      const txDate = new Date(tx.dateObj);
-      return txDate.toISOString().split('T')[0] === dateStr;
+  const filterDayTransactions = (dateStr: string, transactionData: Transaction[] = transactions) => {
+    const dayTxs = transactionData.filter(tx => {
+      const txDate = tx.dateObj || new Date(tx.date);
+      return txDate instanceof Date 
+        ? txDate.toISOString().split('T')[0] === dateStr
+        : false;
     });
     setDayTransactions(dayTxs);
   };
@@ -210,7 +230,7 @@ const CalendarScreen: React.FC = () => {
                   </View>
                   <View>
                     <Text style={styles.transactionTitle}>{transaction.category}</Text>
-                    <Text style={styles.transactionDetail}>{transaction.detail}</Text>
+                    <Text style={styles.transactionDetail}>{transaction.detail || ''}</Text>
                   </View>
                 </View>
                 <Text 

@@ -8,12 +8,17 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { useTransaction } from '../../context/TransactionContext';
+import { useTransactions } from '../../context/TransactionContext'; // Cambiado de useTransaction a useTransactions
 import { formatCurrency } from '../../utils/formatUtils';
 
+// Definir el tipo para la navegación
+type NavigationProp = {
+  navigate: (screen: string, params?: any) => void;
+};
+
 const TransactionHistory: React.FC = () => {
-  const navigation = useNavigation();
-  const { recentTransactions } = useTransaction();
+  const navigation = useNavigation<NavigationProp>();
+  const { recentTransactions } = useTransactions();
 
   const getTransactionIcon = (category: string) => {
     switch (category.toLowerCase()) {

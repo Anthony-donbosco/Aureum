@@ -7,20 +7,27 @@ import {
   ScrollView,
   RefreshControl
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
-import { useTransaction } from '../context/TransactionContext';
+import { useTransactions } from '../context/TransactionContext'; // Cambiado a useTransactions
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import Loader from '../components/common/Loader';
 import { formatCurrency } from '../utils/formatUtils';
 
+// Definir tipo para navegación
+type NavigationProp = {
+  navigate: (screen: string, params?: any) => void;
+};
+
 const DashboardScreen: React.FC = () => {
+  const navigation = useNavigation<NavigationProp>();
   const { user } = useAuth();
   const { 
     balance, 
     recentTransactions, 
-    fetchBalance, 
-    fetchRecentTransactions 
-  } = useTransaction();
+    refreshData // Cambiado a refreshData en lugar de fetchBalance y fetchRecentTransactions
+  } = useTransactions(); // Cambiado a useTransactions
+  
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -31,10 +38,7 @@ const DashboardScreen: React.FC = () => {
   const loadDashboardData = async () => {
     setIsLoading(true);
     try {
-      await Promise.all([
-        fetchBalance(),
-        fetchRecentTransactions()
-      ]);
+      await refreshData(); // Usando refreshData en lugar de Promise.all con varias funciones
     } catch (error) {
       console.error('Error loading dashboard data:', error);
     } finally {
@@ -46,6 +50,11 @@ const DashboardScreen: React.FC = () => {
     setRefreshing(true);
     await loadDashboardData();
     setRefreshing(false);
+  };
+
+  // Función para navegar a la pantalla de añadir transacción
+  const navigateToAddTransaction = (type: 'income' | 'expense') => {
+    navigation.navigate('AddTransaction', { type });
   };
 
   if (isLoading) {
@@ -82,7 +91,7 @@ const DashboardScreen: React.FC = () => {
     >
       <View style={styles.header}>
         <View style={styles.userInfo}>
-          <Text style={styles.greeting}>Hola, {user?.name?.split(' ')[0]}</Text>
+          <Text style={styles.greeting}>Hola, {user?.name?.split(' ')[0] || 'Usuario'}</Text>
           <View style={styles.iconContainer}>
             <TouchableOpacity>
               <Ionicons name="moon-outline" size={24} color="#000" />
@@ -98,12 +107,18 @@ const DashboardScreen: React.FC = () => {
         <Text style={styles.balanceLabel}>Fondos Disponibles</Text>
         <Text style={styles.balanceAmount}>{formatCurrency(balance)}</Text>
         <View style={styles.actionButtons}>
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => navigateToAddTransaction('income')}
+          >
             <View style={[styles.actionButtonInner, styles.incomeButton]}>
               <Text style={styles.actionButtonText}>Ingresos</Text>
             </View>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => navigateToAddTransaction('expense')}
+          >
             <View style={[styles.actionButtonInner, styles.expenseButton]}>
               <Text style={styles.actionButtonText}>Egresos</Text>
             </View>
@@ -126,27 +141,31 @@ const DashboardScreen: React.FC = () => {
 
       <View style={styles.transactionsSection}>
         <Text style={styles.sectionTitle}>Historial de ingresos y egresos</Text>
-        {recentTransactions.map((transaction, index) => (
-          <View key={index} style={styles.transactionItem}>
-            <View style={styles.transactionLeftContent}>
-              <View style={styles.transactionIconContainer}>
-                {getTransactionIcon(transaction.category)}
+        {recentTransactions.length > 0 ? (
+          recentTransactions.map((transaction, index) => (
+            <View key={index} style={styles.transactionItem}>
+              <View style={styles.transactionLeftContent}>
+                <View style={styles.transactionIconContainer}>
+                  {getTransactionIcon(transaction.category)}
+                </View>
+                <View>
+                  <Text style={styles.transactionTitle}>{transaction.category}</Text>
+                  <Text style={styles.transactionDate}>{transaction.date}</Text>
+                </View>
               </View>
-              <View>
-                <Text style={styles.transactionTitle}>{transaction.category}</Text>
-                <Text style={styles.transactionDate}>{transaction.date}</Text>
-              </View>
+              <Text 
+                style={[
+                  styles.transactionAmount,
+                  transaction.type === 'income' ? styles.incomeText : styles.expenseText
+                ]}
+              >
+                {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
+              </Text>
             </View>
-            <Text 
-              style={[
-                styles.transactionAmount,
-                transaction.type === 'income' ? styles.incomeText : styles.expenseText
-              ]}
-            >
-              {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
-            </Text>
-          </View>
-        ))}
+          ))
+        ) : (
+          <Text style={styles.emptyText}>No hay transacciones recientes</Text>
+        )}
       </View>
     </ScrollView>
   );
@@ -309,4 +328,12 @@ const styles = StyleSheet.create({
   expenseText: {
     color: '#F44336',
   },
+  emptyText: {
+    color: '#666',
+    textAlign: 'center',
+    padding: 15,
+  },
 });
+
+// Exportación predeterminada
+export default DashboardScreen;

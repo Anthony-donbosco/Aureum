@@ -1,9 +1,18 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, NavigationProp, ParamListBase } from '@react-navigation/native';
 import SecureInput from '../common/SecureInput';
 import { useAuth } from '../../context/AuthContext';
 import Loader from '../common/Loader';
+
+// Definimos una interfaz para el usuario que se va a registrar
+interface RegisterUserData {
+  name: string;
+  email: string;
+  password: string;
+  birthdate: string;
+  type: 'personal' | 'business';
+}
 
 const Register: React.FC = () => {
   const [name, setName] = useState('');
@@ -12,7 +21,7 @@ const Register: React.FC = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [registerType, setRegisterType] = useState<'personal' | 'business'>('personal');
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<ParamListBase>>();
   const { register } = useAuth();
 
   const isFormValid = () => {
@@ -31,13 +40,15 @@ const Register: React.FC = () => {
     
     setIsLoading(true);
     try {
-      await register({
+      const userData: RegisterUserData = {
         name,
         email,
         password,
         birthdate,
         type: registerType
-      });
+      };
+      
+      await register(userData);
       // Navigation will be handled by navigation container based on auth state
     } catch (error) {
       console.error('Registration error:', error);

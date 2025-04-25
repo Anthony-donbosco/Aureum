@@ -7,24 +7,40 @@ import {
   ScrollView,
   Alert
 } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import SecureInput from '../common/SecureInput';
-import { useTransaction } from '../../context/TransactionContext';
+import { useTransactions } from '../../context/TransactionContext'; // Cambiado de useTransaction a useTransactions
 import { validateInput } from '../../utils/securityUtils';
 import Loader from '../common/Loader';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
+// Definir tipos para las props y parámetros
 interface RouteParams {
   type: 'income' | 'expense';
 }
 
+type TransactionRouteProps = RouteProp<{ params: RouteParams }, 'params'>;
+
+type NavigationProp = {
+  navigate: (screen: string, params?: any) => void;
+  goBack: () => void;
+};
+
+// Definir interfaces para eventos
+interface DateTimePickerEvent {
+  type: string;
+  nativeEvent: {
+    timestamp?: number;
+  };
+}
+
 const TransactionForm: React.FC = () => {
-  const navigation = useNavigation();
-  const route = useRoute();
-  const { type } = route.params as RouteParams;
-  const { addTransaction } = useTransaction();
+  const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<TransactionRouteProps>();
+  const { type } = route.params;
+  const { addTransaction } = useTransactions(); // Cambiado de useTransaction a useTransactions
   
   const [detail, setDetail] = useState('');
   const [amount, setAmount] = useState('');
@@ -56,7 +72,7 @@ const TransactionForm: React.FC = () => {
            validateInput(amount).isValid;
   };
 
-  const onDateChange = (event, selectedDate) => {
+  const onDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
     const currentDate = selectedDate || date;
     setShowDatePicker(false);
     setDate(currentDate);

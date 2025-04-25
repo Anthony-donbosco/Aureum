@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -8,15 +8,35 @@ import {
   ActivityIndicator
 } from 'react-native';
 import { BarChart, PieChart } from 'react-native-chart-kit';
-import { useTransaction } from '../../context/TransactionContext';
+import { useTransactions } from '../../context/TransactionContext'; // Cambiado de useTransaction a useTransactions
 import { formatCurrency } from '../../utils/formatUtils';
 
 const { width } = Dimensions.get('window');
 
 type ChartType = 'bar' | 'pie';
 
+// Definición de tipos para los datos de gráficos
+interface ChartData {
+  labels: string[];
+  datasets: {
+    data: number[];
+    color?: (opacity: number) => string;
+    strokeWidth?: number;
+  }[];
+  // Propiedades adicionales requeridas por react-native-chart-kit
+  yAxisSuffix?: string;
+}
+
+interface PieChartItem {
+  name: string;
+  amount: number;
+  color: string;
+  legendFontColor: string;
+  legendFontSize: number;
+}
+
 const Chart: React.FC = () => {
-  const { incomeTransactions, expenseTransactions } = useTransaction();
+  const { incomeTransactions, expenseTransactions } = useTransactions();
   const [chartType, setChartType] = useState<ChartType>('bar');
   const [loading, setLoading] = useState(false);
 
@@ -29,11 +49,11 @@ const Chart: React.FC = () => {
   };
 
   // Process data for charts
-  const getChartData = () => {
+  const getChartData = (): ChartData | PieChartItem[] => {
     if (chartType === 'bar') {
       // Group transactions by category for bar chart
-      const incomeByCategory = new Map();
-      const expenseByCategory = new Map();
+      const incomeByCategory = new Map<string, number>();
+      const expenseByCategory = new Map<string, number>();
 
       incomeTransactions.forEach(transaction => {
         const currentAmount = incomeByCategory.get(transaction.category) || 0;
@@ -60,7 +80,7 @@ const Chart: React.FC = () => {
       };
     } else {
       // Group data for pie chart (showing expenses by category)
-      const expensesByCategory = new Map();
+      const expensesByCategory = new Map<string, number>();
       
       expenseTransactions.forEach(transaction => {
         const currentAmount = expensesByCategory.get(transaction.category) || 0;
@@ -68,7 +88,7 @@ const Chart: React.FC = () => {
       });
       
       // Convert to data format for pie chart
-      const pieData = [...expensesByCategory.entries()].map(([category, amount], index) => {
+      const pieData: PieChartItem[] = [...expensesByCategory.entries()].map(([category, amount], index) => {
         // Generate colors based on index
         const colors = [
           '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
@@ -106,13 +126,14 @@ const Chart: React.FC = () => {
     }
 
     if (chartType === 'bar') {
-      const barData = getChartData();
+      const barData = getChartData() as ChartData;
       return (
         <BarChart
           data={barData}
           width={width - 40}
           height={220}
           yAxisLabel="$"
+          yAxisSuffix=""
           chartConfig={chartConfig}
           style={styles.chart}
           fromZero
@@ -120,7 +141,7 @@ const Chart: React.FC = () => {
         />
       );
     } else {
-      const pieData = getChartData();
+      const pieData = getChartData() as PieChartItem[];
       return (
         <PieChart
           data={pieData}

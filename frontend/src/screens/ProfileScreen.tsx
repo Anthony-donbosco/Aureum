@@ -5,14 +5,21 @@ import {
   StyleSheet, 
   TouchableOpacity, 
   ScrollView,
-  Image
+  Image,
+  Alert
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 
+// Definir tipo para navegación
+type NavigationProp = {
+  navigate: (screen: string) => void;
+  goBack: () => void;
+};
+
 const ProfileScreen: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
   const { user, logout } = useAuth();
 
   const handleLogout = async () => {
@@ -20,6 +27,17 @@ const ProfileScreen: React.FC = () => {
       await logout();
     } catch (error) {
       console.error('Logout error:', error);
+    }
+  };
+
+  // Manejar la navegación a pantallas que podrían no estar definidas
+  const navigateToScreen = (screenName: 'EditProfile' | 'ChangePassword' | string) => {
+    // Para pantallas que sabemos que existen
+    if (screenName === 'EditProfile' || screenName === 'ChangePassword') {
+      navigation.navigate(screenName);
+    } else {
+      // Para pantallas que podrían no estar implementadas
+      Alert.alert('Próximamente', 'Esta funcionalidad estará disponible pronto.');
     }
   };
 
@@ -32,7 +50,7 @@ const ProfileScreen: React.FC = () => {
         >
           <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Hola, {user?.name}</Text>
+        <Text style={styles.headerTitle}>Hola, {user?.name || 'Usuario'}</Text>
       </View>
 
       <View style={styles.profileSection}>
@@ -40,7 +58,7 @@ const ProfileScreen: React.FC = () => {
         
         <TouchableOpacity 
           style={styles.menuItem}
-          onPress={() => navigation.navigate('EditProfile')}
+          onPress={() => navigateToScreen('EditProfile')}
         >
           <View style={styles.menuIconContainer}>
             <FontAwesome5 name="user-edit" size={18} color="#666" />
@@ -51,7 +69,7 @@ const ProfileScreen: React.FC = () => {
         
         <TouchableOpacity 
           style={styles.menuItem}
-          onPress={() => navigation.navigate('ChangePassword')}
+          onPress={() => navigateToScreen('ChangePassword')}
         >
           <View style={styles.menuIconContainer}>
             <FontAwesome5 name="lock" size={18} color="#666" />
@@ -62,7 +80,7 @@ const ProfileScreen: React.FC = () => {
         
         <TouchableOpacity 
           style={styles.menuItem}
-          onPress={() => navigation.navigate('AboutApp')}
+          onPress={() => navigateToScreen('AboutApp')}
         >
           <View style={styles.menuIconContainer}>
             <FontAwesome5 name="info-circle" size={18} color="#666" />
@@ -73,7 +91,7 @@ const ProfileScreen: React.FC = () => {
         
         <TouchableOpacity 
           style={styles.menuItem}
-          onPress={() => navigation.navigate('Terms')}
+          onPress={() => navigateToScreen('Terms')}
         >
           <View style={styles.menuIconContainer}>
             <FontAwesome5 name="file-contract" size={18} color="#666" />

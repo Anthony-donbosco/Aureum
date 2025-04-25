@@ -1,15 +1,32 @@
-import { mockTransactions, mockBalance } from './mockData';
+// Re-exportar la interfaz Transaction para que otros archivos puedan importarla
+export type { Transaction } from './mockData';
+
+import { mockTransactions as importedTransactions, mockBalance as importedBalance, Transaction as MockTransaction } from './mockData';
+
+// Variables locales para poder modificarlas
+let mockBalance = importedBalance;
+let mockTransactions = [...importedTransactions]; // Copia para no modificar los originales
+
+// Interfaz para los datos de transacciones nuevas
+export interface NewTransaction {
+  type: 'income' | 'expense';
+  category: string;
+  subcategory?: string;
+  amount: number;
+  detail: string;
+  date?: string;
+}
 
 // Simulated transaction service for demo purposes
 export const transactionService = {
-  getBalance: async () => {
+  getBalance: async (): Promise<{ balance: number }> => {
     // Simulate API request delay
     await new Promise(resolve => setTimeout(resolve, 800));
     
     return { balance: mockBalance };
   },
   
-  getIncomeTransactions: async () => {
+  getIncomeTransactions: async (): Promise<{ transactions: MockTransaction[] }> => {
     // Simulate API request delay
     await new Promise(resolve => setTimeout(resolve, 800));
     
@@ -18,7 +35,7 @@ export const transactionService = {
     return { transactions: incomeTransactions };
   },
   
-  getExpenseTransactions: async () => {
+  getExpenseTransactions: async (): Promise<{ transactions: MockTransaction[] }> => {
     // Simulate API request delay
     await new Promise(resolve => setTimeout(resolve, 800));
     
@@ -27,7 +44,7 @@ export const transactionService = {
     return { transactions: expenseTransactions };
   },
   
-  getRecentTransactions: async () => {
+  getRecentTransactions: async (): Promise<{ transactions: MockTransaction[] }> => {
     // Simulate API request delay
     await new Promise(resolve => setTimeout(resolve, 800));
     
@@ -39,7 +56,7 @@ export const transactionService = {
     return { transactions: sortedTransactions };
   },
   
-  getTransactionsByMonth: async (month, year) => {
+  getTransactionsByMonth: async (month: number, year: number): Promise<{ transactions: MockTransaction[] }> => {
     // Simulate API request delay
     await new Promise(resolve => setTimeout(resolve, 800));
     
@@ -52,15 +69,16 @@ export const transactionService = {
     return { transactions: filteredTransactions };
   },
   
-  addTransaction: async (transaction) => {
+  addTransaction: async (transaction: NewTransaction): Promise<{ transaction: MockTransaction }> => {
     // Simulate API request delay
     await new Promise(resolve => setTimeout(resolve, 800));
     
     // Create new transaction
-    const newTransaction = {
+    const newTransaction: MockTransaction = {
       id: 'tx-' + Date.now(),
       ...transaction,
-      dateObj: new Date()
+      dateObj: new Date(),
+      date: transaction.date || new Date().toLocaleDateString('es', { day: '2-digit', month: 'short' })
     };
     
     // In a real app, this would save to a database
@@ -77,99 +95,7 @@ export const transactionService = {
   }
 };
 
-// services/mockData.ts
-export const mockUsers = [
-  {
-    id: 'user-1',
-    name: 'Fabricio Salazar',
-    email: 'fabricio@example.com',
-    password: 'password123',
-    type: 'personal',
-    birthdate: '01/01/1990'
-  }
-];
-
-export const mockBalance = 950.00;
-
-export const mockTransactions = [
-  {
-    id: 'tx-1',
-    type: 'income',
-    category: 'Salario',
-    subcategory: 'Salarios',
-    amount: 900.00,
-    date: '10 mar',
-    dateObj: new Date(2025, 2, 10),
-    detail: 'Salario mensual'
-  },
-  {
-    id: 'tx-2',
-    type: 'income',
-    category: 'Venta',
-    subcategory: 'Venta',
-    amount: 50.00,
-    date: '28 abr',
-    dateObj: new Date(2025, 3, 28),
-    detail: 'Venta de artículos'
-  },
-  {
-    id: 'tx-3',
-    type: 'income',
-    category: 'Venta',
-    subcategory: 'Venta de celular',
-    amount: 250.00,
-    date: '30 abr',
-    dateObj: new Date(2025, 3, 30),
-    detail: 'Venta de teléfono usado'
-  },
-  {
-    id: 'tx-4',
-    type: 'expense',
-    category: 'Supermercado',
-    amount: 150.00,
-    date: '20 mar',
-    dateObj: new Date(2025, 2, 20),
-    detail: 'Compras semanales'
-  },
-  {
-    id: 'tx-5',
-    type: 'expense',
-    category: 'Servicio de Luz',
-    amount: 50.00,
-    date: '21 mar',
-    dateObj: new Date(2025, 2, 21),
-    detail: 'Factura mensual'
-  },
-  {
-    id: 'tx-6',
-    type: 'expense',
-    category: 'Gasolina',
-    amount: 50.00,
-    date: '18 mar',
-    dateObj: new Date(2025, 2, 18),
-    detail: 'Tanque lleno'
-  },
-  {
-    id: 'tx-7',
-    type: 'expense',
-    category: 'Gastos Medicos',
-    amount: 100.00,
-    date: '15 mar',
-    dateObj: new Date(2025, 2, 15),
-    detail: 'Consulta médica'
-  },
-  {
-    id: 'tx-8',
-    type: 'expense',
-    category: 'Servicio de agua',
-    amount: 10.00,
-    date: '28 mar',
-    dateObj: new Date(2025, 2, 28),
-    detail: 'Factura bimestral'
-  }
-];
-
-// utils/formatUtils.ts
+// utils/formatUtils.ts - Estas funciones deberían moverse a un archivo separado
 export const formatCurrency = (amount: number): string => {
   return `$ ${amount.toFixed(2)}`;
 };

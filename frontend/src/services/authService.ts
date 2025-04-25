@@ -1,3 +1,14 @@
+// Primero, define una interfaz para el usuario
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  password: string;
+  type: string;
+  birthdate: string;
+}
+
+// Importa correctamente mockData (sin extensión)
 import { mockUsers, mockUserData } from './mockData';
 
 // Simulated auth service for demo purposes
@@ -7,7 +18,7 @@ export const authService = {
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     // Find user by email
-    const user = mockUsers.find(u => u.email === email);
+    const user = mockUsers.find((u: User) => u.email === email);
     
     if (!user || user.password !== password) {
       throw new Error('Credenciales inválidas');
@@ -22,17 +33,17 @@ export const authService = {
     };
   },
   
-  register: async (userData) => {
+  register: async (userData: Omit<User, 'id'>) => {
     // Simulate API request delay
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     // Check if email already exists
-    if (mockUsers.some(u => u.email === userData.email)) {
+    if (mockUsers.some((u: User) => u.email === userData.email)) {
       throw new Error('El correo ya está registrado');
     }
     
     // Create new user
-    const newUser = {
+    const newUser: User = {
       id: 'user-' + Date.now(),
       name: userData.name,
       email: userData.email,
@@ -53,7 +64,7 @@ export const authService = {
     };
   },
   
-  changePassword: async (oldPassword, newPassword) => {
+  changePassword: async (oldPassword: string, newPassword: string) => {
     // Simulate API request delay
     await new Promise(resolve => setTimeout(resolve, 1000));
     
@@ -61,7 +72,7 @@ export const authService = {
     return { success: true };
   },
   
-  updateProfile: async (userData) => {
+  updateProfile: async (userData: Partial<User>) => {
     // Simulate API request delay
     await new Promise(resolve => setTimeout(resolve, 1000));
     

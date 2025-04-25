@@ -4,7 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useAuth } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 
-// Screens
+// Importar todas las pantallas
 import AuthScreen from '../screens/AuthScreen';
 import DashboardScreen from '../screens/DashboardScreen';
 import ProfileScreen from '../screens/ProfileScreen';
@@ -13,15 +13,39 @@ import CalendarScreen from '../screens/CalendarScreen';
 import ChangePasswordScreen from '../screens/ChangePasswordScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
 
-const Stack = createStackNavigator();
-const Tab = createBottomTabNavigator();
+// También importar las pantallas de transacciones 
+// (suponiendo que existen basado en el código anterior)
+import TransactionForm from '../components/transactions/TransactionForm';
+
+// Definición de tipos para las rutas
+type RootStackParamList = {
+  Auth: undefined;
+  Main: undefined;
+  ChangePassword: undefined;
+  EditProfile: undefined;
+  AddTransaction: { type: 'income' | 'expense' };
+};
+
+type TabParamList = {
+  Dashboard: undefined;
+  Transactions: undefined;
+  Calendar: undefined;
+  Profile: undefined;
+};
+
+// Crear navegadores tipados
+const Stack = createStackNavigator<RootStackParamList>();
+const Tab = createBottomTabNavigator<TabParamList>();
+
+// Definir correctamente el tipo para el nombre del icono
+type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
 const MainTabs = () => {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
-          let iconName;
+          let iconName: IoniconsName;
 
           if (route.name === 'Dashboard') {
             iconName = focused ? 'home' : 'home-outline';
@@ -31,6 +55,9 @@ const MainTabs = () => {
             iconName = focused ? 'calendar' : 'calendar-outline';
           } else if (route.name === 'Profile') {
             iconName = focused ? 'person' : 'person-outline';
+          } else {
+            // Valor predeterminado en caso de un nombre de ruta no reconocido
+            iconName = 'help-circle-outline';
           }
 
           return <Ionicons name={iconName} size={size} color={color} />;
@@ -60,6 +87,7 @@ const AppNavigator: React.FC = () => {
           <Stack.Screen name="Main" component={MainTabs} />
           <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
           <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+          <Stack.Screen name="AddTransaction" component={TransactionForm} />
         </>
       )}
     </Stack.Navigator>

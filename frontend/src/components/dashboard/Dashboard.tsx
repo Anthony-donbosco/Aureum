@@ -11,7 +11,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
-import { useTransaction } from '../../context/TransactionContext';
+import { useTransactions } from '../../context/TransactionContext'; // Cambiado de useTransaction a useTransactions
 import { formatCurrency } from '../../utils/formatUtils';
 import TransactionHistory from './TransactionHistory';
 import Chart from './Chart';
@@ -19,18 +19,22 @@ import Loader from '../common/Loader';
 
 const { width } = Dimensions.get('window');
 
+// Definir el tipo para la navegación
+type NavigationProp = {
+  navigate: (screen: string, params?: any) => void;
+};
+
 const Dashboard: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
   const { user } = useAuth();
   const { 
     balance, 
-    fetchBalance, 
-    fetchRecentTransactions,
-    fetchIncomeTransactions,
-    fetchExpenseTransactions,
+    loading: transactionLoading,
+    recentTransactions,
     incomeTransactions,
-    expenseTransactions
-  } = useTransaction();
+    expenseTransactions,
+    refreshData // Cambiado de fetchBalance, fetchRecentTransactions, etc. al método unificado refreshData
+  } = useTransactions();
   
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -43,12 +47,7 @@ const Dashboard: React.FC = () => {
   const loadDashboardData = async () => {
     setIsLoading(true);
     try {
-      await Promise.all([
-        fetchBalance(),
-        fetchRecentTransactions(),
-        fetchIncomeTransactions(),
-        fetchExpenseTransactions()
-      ]);
+      await refreshData(); // Usando el método unificado de refreshData
     } catch (error) {
       console.error('Error loading dashboard data:', error);
     } finally {
@@ -136,7 +135,7 @@ const Dashboard: React.FC = () => {
     >
       <View style={styles.header}>
         <View style={styles.userInfo}>
-          <Text style={styles.greeting}>Hola, {user?.name?.split(' ')[0]}</Text>
+          <Text style={styles.greeting}>Hola, {user?.name?.split(' ')[0] || 'Usuario'}</Text>
           <View style={styles.iconContainer}>
             <TouchableOpacity style={styles.iconButton}>
               <Ionicons name="moon-outline" size={22} color="#000" />

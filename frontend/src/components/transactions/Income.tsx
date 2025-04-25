@@ -8,17 +8,22 @@ import {
   ScrollView,
   RefreshControl
 } from 'react-native';
-import { useTransaction } from '../../context/TransactionContext';
+import { useTransactions } from '../../context/TransactionContext'; // Cambiado de useTransaction a useTransactions
 import { useNavigation } from '@react-navigation/native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { formatCurrency } from '../../utils/formatUtils';
 import Loader from '../common/Loader';
 
+// Definir el tipo para la navegación
+type NavigationProp = {
+  navigate: (screen: string, params?: any) => void;
+};
+
 const Income: React.FC = () => {
-  const { incomeTransactions, fetchIncomeTransactions } = useTransaction();
+  const { incomeTransactions, refreshData } = useTransactions(); // Cambiado a useTransactions y refreshData
   const [refreshing, setRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
 
   useEffect(() => {
     loadIncomeData();
@@ -27,7 +32,7 @@ const Income: React.FC = () => {
   const loadIncomeData = async () => {
     setIsLoading(true);
     try {
-      await fetchIncomeTransactions();
+      await refreshData(); // Cambiado a refreshData en lugar de fetchIncomeTransactions
     } catch (error) {
       console.error('Error loading income data:', error);
     } finally {
@@ -64,7 +69,7 @@ const Income: React.FC = () => {
     <View style={styles.container}>
       <FlatList
         data={incomeTransactions}
-        keyExtractor={(item, index) => index.toString()}
+        keyExtractor={(item, index) => item.id || index.toString()}
         renderItem={({ item }) => (
           <View style={styles.transactionItem}>
             <View style={styles.transactionLeftContent}>
@@ -73,7 +78,7 @@ const Income: React.FC = () => {
               </View>
               <View>
                 <Text style={styles.transactionTitle}>{item.category}</Text>
-                <Text style={styles.transactionSubtitle}>{item.subcategory}</Text>
+                <Text style={styles.transactionSubtitle}>{item.subcategory || ''}</Text>
                 <Text style={styles.transactionDate}>{item.date}</Text>
               </View>
             </View>

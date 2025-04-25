@@ -1,193 +1,122 @@
-import React, { createContext, useState, useContext } from 'react';
-import { transactionService } from '../services/transactionService';
-import { format, parse } from 'date-fns';
-import { es } from 'date-fns/locale';
+import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import { transactionService, Transaction, NewTransaction } from '../services/transactionService';
 
-interface Transaction {
-  id: string;
-  type: 'income' | 'expense';
-  category: string;
-  subcategory?: string;
-  amount: number;
-  date: string;
-  dateObj: Date;
-  detail: string;
-}
-
-interface TransactionInput {
-  type: 'income' | 'expense';
-  category: string;
-  amount: number;
-  date: string;
-  detail: string;
-}
-
-interface TransactionContextData {
+// Definir la interfaz para el contexto de transacciones
+interface TransactionContextType {
   balance: number;
+  loading: boolean;
+  recentTransactions: Transaction[];
   incomeTransactions: Transaction[];
   expenseTransactions: Transaction[];
-  recentTransactions: Transaction[];
-  transactions: Transaction[];
-  fetchBalance: () => Promise<void>;
-  fetchIncomeTransactions: () => Promise<void>;
-  fetchExpenseTransactions: () => Promise<void>;
-  fetchRecentTransactions: () => Promise<void>;
-  fetchTransactionsByMonth: (month: number, year: number) => Promise<void>;
-  addTransaction: (transaction: TransactionInput) => Promise<void>;
+  addTransaction: (transaction: NewTransaction) => Promise<boolean>;
+  refreshData: () => Promise<void>;
+  getTransactionsByMonth: (month: number, year: number) => Promise<Transaction[]>;
 }
 
-const TransactionContext = createContext<TransactionContextData>({} as TransactionContextData);
+// Definir el tipo para las props del proveedor
+interface TransactionProviderProps {
+  children: ReactNode;
+}
 
-export const TransactionProvider: React.FC = ({ children }) => {
-  const [balance, setBalance] = useState(0);
+// Crear el contexto con valores por defecto
+const TransactionContext = createContext<TransactionContextType>({
+  balance: 0,
+  loading: false,
+  recentTransactions: [],
+  incomeTransactions: [],
+  expenseTransactions: [],
+  addTransaction: async () => false,
+  refreshData: async () => {},
+  getTransactionsByMonth: async () => [],
+});
+
+// Hook personalizado para usar el contexto
+export const useTransactions = () => useContext(TransactionContext);
+
+// Componente proveedor que envuelve la aplicación
+export const TransactionProvider: React.FC<TransactionProviderProps> = ({ children }) => {
+  const [balance, setBalance] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
   const [incomeTransactions, setIncomeTransactions] = useState<Transaction[]>([]);
   const [expenseTransactions, setExpenseTransactions] = useState<Transaction[]>([]);
-  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
 
-  const fetchBalance = async () => {
+  // Cargar datos iniciales al montar el componente
+  useEffect(() => {
+    refreshData();
+  }, []);
+
+  // Función para refrescar todos los datos
+  const refreshData = async (): Promise<void> => {
+    setLoading(true);
     try {
-      // In a real app, this would make an API call
-      const response = await transactionService.getBalance();
-      setBalance(response.balance);
+      // Cargar balance
+      const balanceResponse = await transactionService.getBalance();
+      setBalance(balanceResponse.balance);
+      
+      // Cargar transacciones recientes
+      const recentResponse = await transactionService.getRecentTransactions();
+      setRecentTransactions(recentResponse.transactions);
+      
+      // Cargar transacciones de ingresos
+      const incomeResponse = await transactionService.getIncomeTransactions();
+      setIncomeTransactions(incomeResponse.transactions);
+      
+      // Cargar transacciones de gastos
+      const expenseResponse = await transactionService.getExpenseTransactions();
+      setExpenseTransactions(expenseResponse.transactions);
     } catch (error) {
-      console.error('Fetch balance error:', error);
-      throw error;
+      console.error('Error al cargar datos de transacciones:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const fetchIncomeTransactions = async () => {
+  // Función para agregar una nueva transacción
+  const addTransaction = async (transaction: NewTransaction): Promise<boolean> => {
+    setLoading(true);
     try {
-      // In a real app, this would make an API call
-      const response = await transactionService.getIncomeTransactions();
-      
-      // Process dates
-      const processedTransactions = response.transactions.map(transaction => ({
-        ...transaction,
-        dateObj: parseDateString(transaction.date)
-      }));
-      
-      setIncomeTransactions(processedTransactions);
-    } catch (error) {
-      console.error('Fetch income transactions error:', error);
-      throw error;
-    }
-  };
-
-  const fetchExpenseTransactions = async () => {
-    try {
-      // In a real app, this would make an API call
-      const response = await transactionService.getExpenseTransactions();
-      
-      // Process dates
-      const processedTransactions = response.transactions.map(transaction => ({
-        ...transaction,
-        dateObj: parseDateString(transaction.date)
-      }));
-      
-      setExpenseTransactions(processedTransactions);
-    } catch (error) {
-      console.error('Fetch expense transactions error:', error);
-      throw error;
-    }
-  };
-
-  const fetchRecentTransactions = async () => {
-    try {
-      // In a real app, this would make an API call
-      const response = await transactionService.getRecentTransactions();
-      
-      // Process dates
-      const processedTransactions = response.transactions.map(transaction => ({
-        ...transaction,
-        dateObj: parseDateString(transaction.date)
-      }));
-      
-      setRecentTransactions(processedTransactions);
-    } catch (error) {
-      console.error('Fetch recent transactions error:', error);
-      throw error;
-    }
-  };
-
-  const fetchTransactionsByMonth = async (month: number, year: number) => {
-    try {
-      // In a real app, this would make an API call
-      const response = await transactionService.getTransactionsByMonth(month, year);
-      
-      // Process dates
-      const processedTransactions = response.transactions.map(transaction => ({
-        ...transaction,
-        dateObj: parseDateString(transaction.date)
-      }));
-      
-      setTransactions(processedTransactions);
-    } catch (error) {
-      console.error('Fetch transactions by month error:', error);
-      throw error;
-    }
-  };
-
-  const addTransaction = async (transaction: TransactionInput) => {
-    try {
-      // In a real app, this would make an API call
       await transactionService.addTransaction(transaction);
-      
-      // Update relevant transaction lists
-      if (transaction.type === 'income') {
-        await fetchIncomeTransactions();
-      } else {
-        await fetchExpenseTransactions();
-      }
-      
-      // Update balance and recent transactions
-      await fetchBalance();
-      await fetchRecentTransactions();
+      // Refrescar datos después de agregar la transacción
+      await refreshData();
+      return true;
     } catch (error) {
-      console.error('Add transaction error:', error);
-      throw error;
+      console.error('Error al agregar transacción:', error);
+      return false;
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Helper function to parse date strings
-  const parseDateString = (dateStr: string): Date => {
+  // Función para obtener transacciones por mes y año
+  const getTransactionsByMonth = async (month: number, year: number): Promise<Transaction[]> => {
+    setLoading(true);
     try {
-      // Try different date formats
-      // Format: "15 mar", "28 abr", etc.
-      return parse(dateStr, 'dd MMM', new Date(), { locale: es });
+      const response = await transactionService.getTransactionsByMonth(month, year);
+      return response.transactions;
     } catch (error) {
-      console.warn('Error parsing date:', dateStr, error);
-      return new Date(); // Fallback to current date
+      console.error('Error al obtener transacciones por mes:', error);
+      return [];
+    } finally {
+      setLoading(false);
     }
+  };
+
+  // Valor del contexto que será proporcionado
+  const contextValue: TransactionContextType = {
+    balance,
+    loading,
+    recentTransactions,
+    incomeTransactions,
+    expenseTransactions,
+    addTransaction,
+    refreshData,
+    getTransactionsByMonth,
   };
 
   return (
-    <TransactionContext.Provider
-      value={{
-        balance,
-        incomeTransactions,
-        expenseTransactions,
-        recentTransactions,
-        transactions,
-        fetchBalance,
-        fetchIncomeTransactions,
-        fetchExpenseTransactions,
-        fetchRecentTransactions,
-        fetchTransactionsByMonth,
-        addTransaction
-      }}
-    >
+    <TransactionContext.Provider value={contextValue}>
       {children}
     </TransactionContext.Provider>
   );
-};
-
-export const useTransaction = () => {
-  const context = useContext(TransactionContext);
-  
-  if (!context) {
-    throw new Error('useTransaction must be used within a TransactionProvider');
-  }
-  
-  return context;
 };
