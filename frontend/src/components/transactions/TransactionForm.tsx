@@ -150,7 +150,7 @@ const TransactionForm: React.FC = () => {
         )}
         
         <SecureInput
-          placeholder="Cantidad que se gastó"
+          placeholder="Monto de la transaccion"
           value={amount}
           onChangeText={setAmount}
           keyboardType="numeric"

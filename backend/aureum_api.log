@@ -1,0 +1,9 @@
+2025-05-18 14:46:42,491 - fastapi - ERROR - Form data requires "python-multipart" to be installed. 
+You can install "python-multipart" with: 
+
+pip install python-multipart
+
+2025-05-18 14:54:43,875 - aureum_api - INFO - Request from 127.0.0.1: GET /
+2025-05-18 14:54:44,043 - aureum_api - INFO - Request from 127.0.0.1: GET /favicon.ico
+2025-05-18 14:56:00,090 - aureum_api - INFO - Request from 127.0.0.1: GET /docs
+2025-05-18 14:56:14,901 - aureum_api - INFO - Request from 127.0.0.1: GET /.well-known/appspecific/com.chrome.devtools.json

@@ -1,0 +1,20 @@
+{
+  "name": "aureum-backend",
+  "version": "1.0.0",
+  "description": "Backend para la aplicación Aureum",
+  "main": "app/main.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "dev": "ts-node app/main.ts",
+    "watch": "tsc -w"
+  },
+  "dependencies": {
+    
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.10",
+    "typescript": "^5.2.2",
+    "ts-node": "^10.9.1"
+  }
+}

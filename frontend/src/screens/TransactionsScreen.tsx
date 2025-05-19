@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import Income from '../components/transactions/Income';
@@ -10,6 +10,7 @@ const TransactionsScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <Tab.Navigator
+        // No usamos tabBar aquí para evitar problemas con TypeScript
         screenOptions={{
           tabBarActiveTintColor: '#F9BE00',
           tabBarInactiveTintColor: '#666',

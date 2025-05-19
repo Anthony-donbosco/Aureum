@@ -21,7 +21,7 @@
     "@react-navigation/stack": "^6.3.20",
     "axios": "^1.6.0",
     "date-fns": "^2.30.0",
-    "expo": "^52.0.46",
+    "expo": "53.0.0",
     "expo-status-bar": "~2.0.1",
     "react": "18.3.1",
     "react-dom": "18.3.1",
@@ -36,7 +36,7 @@
     "react-native-screens": "~4.4.0",
     "react-native-simple-encryption": "^1.2.1",
     "react-native-svg": "15.8.0",
-    "react-native-tab-view": "^3.5.2",
+    "react-native-tab-view": "^4.0.10",
     "react-native-web": "~0.19.6",
     "recharts": "^2.9.0"
   },

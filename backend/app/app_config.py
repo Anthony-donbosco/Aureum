@@ -2,6 +2,20 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
+import logging
+
+# Configuración básica para settings
+class Settings:
+    APP_NAME = "Aureum API"
+    APP_VERSION = "1.0.0"
+    DEBUG = True
+    ALLOWED_ORIGINS = ["*"]  # En producción, limitar esto
+
+# Crear instancia de settings
+settings = Settings()
+
+# Configurar logger
+logger = logging.getLogger("aureum")
 
 def create_app() -> FastAPI:
     """

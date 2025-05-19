@@ -1,3 +1,10 @@
+import re
+import html
+import logging
+
+# Configurar logger
+logger = logging.getLogger(__name__)
+
 def validate_input(input_string: str) -> bool:
     """
     Valida una entrada para detectar posibles ataques XSS
@@ -35,7 +42,7 @@ def validate_email(email: str) -> bool:
         return False
     
     # Validar formato de email
-    pattern = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})')
+    pattern = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
     return bool(pattern.match(email))
 
 def validate_password_strength(password: str) -> dict:
@@ -77,8 +84,9 @@ def validate_password_strength(password: str) -> dict:
             "message": "La contraseña debe incluir al menos una letra minúscula"
         }
     
-    # Verificar carácter especial
-    if not any(char in "!@#$%^&*(),.?\":{}|<>" for char in password):
+    # Verificar carácter especial - Corregida la validación de XSS
+    special_chars = "!@#$%^&*(),.?\":{}|"
+    if not any(char in special_chars for char in password):
         return {
             "valid": False,
             "message": "La contraseña debe incluir al menos un carácter especial"

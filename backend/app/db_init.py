@@ -1,26 +1,45 @@
 import logging
-from sqlalchemy import create_engine
-from sqlalchemy_utils import database_exists, create_database
-from ..models.user import User, UserType
-from ..models.transaction import Transaction, TransactionType
-from ..services.auth_service import get_password_hash
 import uuid
 from datetime import datetime, timedelta
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+import contextlib
 
+# Importar modelos (corregir las rutas relativas)
+from app.models.user import User, UserType
+from app.models.transaction import Transaction, TransactionType
+from app.services.auth_service import get_password_hash
+
+# Configuración del logger
 logger = logging.getLogger(__name__)
+
+# Configuración de la base de datos
+DATABASE_URL = "sqlite:///./aureum.db"
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={"check_same_thread": False}  # Solo para SQLite
+)
+
+# Crear session factory
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Función para obtener sesión de DB
+@contextlib.contextmanager
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 def init_db():
     """
     Inicializa la base de datos con datos de prueba
     """
-    from ..models import Base
+    # Importamos Base aquí para evitar dependencias circulares
+    from app.models import Base
     
     try:
-        # Crear base de datos si no existe
-        if not database_exists(engine.url):
-            create_database(engine.url)
-            logger.info(f"Base de datos creada: {engine.url}")
-        
         # Crear tablas
         Base.metadata.create_all(bind=engine)
         logger.info("Tablas creadas correctamente")
@@ -28,7 +47,8 @@ def init_db():
         # Insertar datos de prueba
         with get_db() as db:
             # Verificar si ya existen datos
-            if db.query(User).count() > 0:
+            user_count = db.query(User).count() if hasattr(db, 'query') else 0
+            if user_count > 0:
                 logger.info("La base de datos ya contiene datos, omitiendo la inicialización")
                 return
             

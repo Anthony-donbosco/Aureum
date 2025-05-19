@@ -11,13 +11,23 @@ import secrets
 import html
 import logging
 from logging.handlers import RotatingFileHandler
+import os
+from pathlib import Path
+from dotenv import load_dotenv
 
-# Setup logging
+# Cargar variables de entorno
+env_path = Path(__file__).parent.parent / '.env'
+load_dotenv(env_path)
+
+# Configurar logging
+log_dir = Path("logs")
+log_dir.mkdir(exist_ok=True)
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        RotatingFileHandler("aureum_api.log", maxBytes=10485760, backupCount=5),
+        RotatingFileHandler(log_dir / "aureum_api.log", maxBytes=10485760, backupCount=5),
         logging.StreamHandler()
     ]
 )
@@ -26,19 +36,22 @@ logger = logging.getLogger("aureum_api")
 # Initialize FastAPI
 app = FastAPI(title="Aureum API", description="Backend for Aureum financial app", version="1.0.0")
 
+# Configuración desde variables de entorno
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
+
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify actual origins
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
 
-# Security configuration
-SECRET_KEY = "YOUR_SECRET_KEY"  # In production, use environment variables
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
+# Security configuration from environment variables
+SECRET_KEY = os.getenv("SECRET_KEY", "your-fallback-secret-key-change-in-production")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60 * 24))
 
 # OAuth2 scheme
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -48,30 +61,9 @@ users_db = {}
 transactions_db = []
 current_id = 0
 
-# Security helper functions
-def validate_input(input_string: str) -> bool:
-    """Check for potential XSS attack patterns"""
-    xss_pattern = re.compile(r'[<>$\/=]')
-    return not bool(xss_pattern.search(input_string))
-
-def sanitize_input(input_string: str) -> str:
-    """Sanitize input to prevent XSS"""
-    return html.escape(input_string)
-
-def hash_password(password: str) -> str:
-    """Create salted password hash"""
-    salt = secrets.token_hex(16)
-    hash_obj = hashlib.sha256(f"{password}{salt}".encode())
-    return f"{hash_obj.hexdigest()}:{salt}"
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify password against stored hash"""
-    if ":" not in hashed_password:
-        return False
-    
-    hash_val, salt = hashed_password.split(":")
-    hash_obj = hashlib.sha256(f"{plain_password}{salt}".encode())
-    return hash_obj.hexdigest() == hash_val
+# Import utility functions from separate modules
+from app.utils.validators import validate_input, sanitize_input
+from app.utils.security import hash_password, verify_password
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
     """Create JWT token"""
@@ -334,6 +326,12 @@ async def get_balance(current_user: UserInDB = Depends(get_current_user)):
     
     return {"balance": balance}
 
+# Health check endpoint
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {"status": "healthy", "timestamp": datetime.utcnow()}
+
 # Main function
 if __name__ == "__main__":
     import uvicorn
@@ -349,4 +347,5 @@ if __name__ == "__main__":
     users_db[default_user.email] = default_user
     
     # Start server
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)

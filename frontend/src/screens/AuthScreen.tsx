@@ -46,6 +46,7 @@ const AuthScreen: React.FC = () => {
           
           <View style={styles.tabContainer}>
             <Tab.Navigator
+              // No usamos tabBar aquí para evitar problemas con TypeScript
               screenOptions={{
                 tabBarActiveTintColor: '#F9BE00',
                 tabBarInactiveTintColor: '#666',

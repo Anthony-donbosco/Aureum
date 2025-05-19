@@ -58,7 +58,7 @@ const Register: React.FC = () => {
       };
       
       await register(userData);
-      // Navigation will be handled by navigation container based on auth state
+      // falta
     } catch (error) {
       console.error('Registration error:', error);
       // Handle registration error

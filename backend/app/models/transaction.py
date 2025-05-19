@@ -1,3 +1,13 @@
+import enum
+from datetime import datetime
+import re
+from typing import Optional, List
+from pydantic import BaseModel, EmailStr, Field, validator
+from sqlalchemy import Column, String, Float, DateTime, Enum, ForeignKey
+from sqlalchemy.orm import relationship
+
+from ..db_config import Base
+
 class TransactionType(str, enum.Enum):
     INCOME = "income"
     EXPENSE = "expense"
@@ -24,12 +34,6 @@ class Transaction(Base):
     
     def __repr__(self):
         return f"<Transaction {self.id}: {self.type} - {self.category} - {self.amount}>"
-
-# Modelos Pydantic para validación
-from pydantic import BaseModel, EmailStr, Field, validator
-from typing import Optional, List
-from datetime import datetime
-import re
 
 # Validadores
 def validate_no_xss(value):
@@ -72,7 +76,7 @@ class UserCreate(UserBase):
     @validator('birthdate')
     def validate_birthdate(cls, v):
         # Validar formato (DD/MM/YYYY)
-        pattern = re.compile(r'^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4})
+        pattern = re.compile(r'^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$')
         if not pattern.match(v):
             raise ValueError("Formato de fecha incorrecto. Use DD/MM/YYYY")
         return v
@@ -169,7 +173,7 @@ class TransactionInDB(TransactionBase):
     class Config:
         orm_mode = True
 
-class Transaction(TransactionBase):
+class Transaction_Schema(TransactionBase):
     """Modelo para respuesta de transacción"""
     id: str
     
@@ -178,7 +182,7 @@ class Transaction(TransactionBase):
 
 class TransactionList(BaseModel):
     """Modelo para lista de transacciones"""
-    transactions: List[Transaction]
+    transactions: List[Transaction_Schema]
 
 class ChangePassword(BaseModel):
     """Modelo para cambio de contraseña"""

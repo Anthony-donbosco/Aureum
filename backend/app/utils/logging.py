@@ -1,5 +1,9 @@
+import logging
 import time
 from functools import wraps
+
+# Configurar logger
+logger = logging.getLogger(__name__)
 
 def log_execution_time(func):
     """

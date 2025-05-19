@@ -1,6 +1,10 @@
+import logging
 from datetime import datetime
 import locale
 from typing import Dict, List, Any
+
+# Configurar logger
+logger = logging.getLogger(__name__)
 
 def format_date(date_str: str, input_format: str, output_format: str) -> str:
     """

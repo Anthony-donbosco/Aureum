@@ -1,6 +1,14 @@
+import enum
+from datetime import datetime
+from sqlalchemy import Column, String, DateTime, Enum
+from sqlalchemy.orm import relationship
+from ..db_config import Base
+
+
 class UserType(str, enum.Enum):
     PERSONAL = "personal"
     BUSINESS = "business"
+
 
 class User(Base):
     """
